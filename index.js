@@ -47,9 +47,59 @@ async function run() {
         .estimatedDocumentCount();
       res.send(result);
     });
-    app.post("/banner", async (req, res) => {
+    // add banner
+    app.post("/addBanner", async (req, res) => {
       const body = req.body;
       const result = await bannerCollection.insertOne(body);
+      res.send(result);
+    });
+    // clint side banner unhide
+    app.get("/banner", async (req, res) => {
+      const query = { hide: false };
+      const result = await bannerCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // all banner for dashboard
+    app.get("/allBanner/:variation", async (req, res) => {
+      const variation = req.params.variation;
+      console.log(variation);
+      let query = {};
+      if (variation == "Unhide") {
+        query = { hide: true };
+      } else if (variation == "Hide") {
+        query = { hide: false };
+      }
+
+      const result = await bannerCollection.find(query).toArray();
+      res.send(result);
+    });
+    // update from dashboar for update hide and unhide banner
+    app.put("/updatebanner/:id", async (req, res) => {
+      const id = req.params.id;
+      const body = req.body;
+      console.log(id, body);
+      if (!id) {
+        return;
+      }
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+
+      const updateDoc = {
+        $set: body,
+      };
+      const result = await bannerCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    app.delete("/deleteBanner/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await bannerCollection.deleteOne(filter);
       res.send(result);
     });
   } finally {
