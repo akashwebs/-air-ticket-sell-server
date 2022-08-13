@@ -53,17 +53,19 @@ async function run() {
       const result = await bannerCollection.insertOne(body);
       res.send(result);
     });
-    // clint side banner unhide
+    // clint side get banner
     app.get("/banner", async (req, res) => {
       const query = { hide: false };
       const result = await bannerCollection.find(query).toArray();
-      res.send(result);
+      const sorting = result.sort((x, y) => {
+        return x.orders - y.orders;
+      });
+      res.send(sorting);
     });
 
     // all banner for dashboard
     app.get("/allBanner/:variation", async (req, res) => {
       const variation = req.params.variation;
-      console.log(variation);
       let query = {};
       if (variation == "Unhide") {
         query = { hide: true };
@@ -78,7 +80,6 @@ async function run() {
     app.put("/updatebanner/:id", async (req, res) => {
       const id = req.params.id;
       const body = req.body;
-      console.log(id, body);
       if (!id) {
         return;
       }
@@ -95,7 +96,7 @@ async function run() {
       );
       res.send(result);
     });
-
+    // delte banner fromm dashbaoard
     app.delete("/deleteBanner/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
