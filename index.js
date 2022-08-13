@@ -41,6 +41,14 @@ async function run() {
       const result = await allDonnerCollection.findOne(query);
       res.send(result);
     });
+
+    // all donner for dashboard
+    app.get("/allDonner", async(req, res )=> {
+      const query = {}
+      const allDonner = await allDonnerCollection.find(query).toArray()
+      res.send(allDonner)
+    })
+      
     app.get("/totalDonner", async (req, res) => {
       const result = await allDonnerCollection
         .find({})
