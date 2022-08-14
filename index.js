@@ -43,10 +43,37 @@ async function run() {
     });
 
     // all donner for dashboard
-    app.get("/allDonner", async (req, res) => {
+    app.get("/allDonner/:serachQuery", async (req, res) => {
+      const serachQuery = req.params.serachQuery;
       const query = {};
       const allDonner = await allDonnerCollection.find(query).toArray();
-      res.send(allDonner);
+      if (serachQuery === "all") {
+        res.send(allDonner);
+        return;
+      }
+      if (
+        serachQuery === "a+" ||
+        serachQuery === "a-" ||
+        serachQuery === "b+" ||
+        serachQuery === "b-" ||
+        serachQuery === "ab+" ||
+        serachQuery === "ab-" ||
+        serachQuery === "o+" ||
+        serachQuery === "o-"
+      ) {
+        const filterGroup = allDonner.filter(
+          (data) => data.bloodGroup.toLowerCase() === serachQuery
+        );
+        res.send(filterGroup);
+        return;
+      }
+      const filterData = allDonner.filter(
+        (data) =>
+          data.phone.toLowerCase().includes(serachQuery) ||
+          data.fullName.includes(serachQuery)
+      );
+
+      res.send(filterData);
     });
 
     app.get("/totalDonner", async (req, res) => {
