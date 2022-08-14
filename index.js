@@ -43,12 +43,12 @@ async function run() {
     });
 
     // all donner for dashboard
-    app.get("/allDonner", async(req, res )=> {
-      const query = {}
-      const allDonner = await allDonnerCollection.find(query).toArray()
-      res.send(allDonner)
-    })
-      
+    app.get("/allDonner", async (req, res) => {
+      const query = {};
+      const allDonner = await allDonnerCollection.find(query).toArray();
+      res.send(allDonner);
+    });
+
     app.get("/totalDonner", async (req, res) => {
       const result = await allDonnerCollection
         .find({})
@@ -109,6 +109,39 @@ async function run() {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const result = await bannerCollection.deleteOne(filter);
+      res.send(result);
+    });
+    // update profile
+
+    app.put("/updateProfile/:id", async (req, res) => {
+      const id = req.params.id;
+      const body = req.body;
+      if (!id) {
+        return;
+      }
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+
+      const updateDoc = {
+        $set: body,
+      };
+      const result = await allDonnerCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    // delete donner profile
+    app.delete("/deleteDonnerProfile/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      if (!id) {
+        return;
+      }
+      const filter = { _id: ObjectId(id) };
+      const result = await allDonnerCollection.deleteOne(filter);
       res.send(result);
     });
   } finally {
