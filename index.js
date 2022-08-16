@@ -2,10 +2,12 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const { JsonWebTokenError } = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
 app.use(cors());
 app.use(express.json());
+const jwt = require("jsonwebtoken");
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.eddx8.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -15,6 +17,22 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+function verifyJwt(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "unathuraization error" });
+  }
+  const token = authHeader.split(" ")[1];
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRATE, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ message: "forbidden access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
+
 async function run() {
   try {
     client.connect();
@@ -22,6 +40,27 @@ async function run() {
       .db("rokto-bondon")
       .collection("all-donner");
     const bannerCollection = client.db("rokto-bondon").collection("banner");
+
+    // jwt user token send
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+
+      if (!email) {
+        return;
+      }
+      const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRATE, {
+        expiresIn: "1h",
+      });
+      const filter = { email: email };
+      const option = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await userCollection.updateOne(filter, updateDoc, option);
+      res.send({ result, token });
+    });
+
     // add donner
     app.post("/addDonner", async (req, res) => {
       const body = req.body;
@@ -74,6 +113,14 @@ async function run() {
       );
 
       res.send(filterData);
+    });
+    // get blood group
+    app.get("/bloodgroup/:group", async (req, res) => {
+      const group = req.params.group;
+      console.log(group);
+      const query = { bloodGroup: group, approved: true };
+      const result = await allDonnerCollection.find(query).toArray();
+      res.send(result);
     });
 
     app.get("/totalDonner", async (req, res) => {
@@ -170,6 +217,78 @@ async function run() {
       const filter = { _id: ObjectId(id) };
       const result = await allDonnerCollection.deleteOne(filter);
       res.send(result);
+    });
+
+    /* 
+    group='all'
+    distric='all'
+    type= 'all'
+    type='all'
+    type='yes'
+     */
+
+    // search result
+    app.get("/serachresult/:group", async (req, res) => {
+      console.log(req.query);
+      console.log(req.params.group);
+      const queryData = req.query;
+
+      const distric = queryData.distric;
+      const group = req.params.group;
+      const type = queryData.type;
+
+      const allData = await allDonnerCollection
+        .find({ approved: true })
+        .toArray();
+      // blood group only
+      if (group !== "all" && distric === "all" && type === "all") {
+        const bloodGroupData = allData.filter(
+          (data) => data.bloodGroup === group
+        );
+        res.send(bloodGroupData);
+        return;
+      }
+      // distri onley
+      if (group === "all" && distric !== "all" && type === "all") {
+        const districData = allData.filter((data) => data.distric === distric);
+        res.send(districData);
+        return;
+      }
+      // only elegiable
+      if (group === "all" && distric === "all" && type === "yes") {
+        const elegiable = allData.filter((data) => data.elegibale === "Yes");
+        res.send(elegiable);
+        return;
+      }
+
+      // blood group and distric
+      if (group !== "all" && distric !== "all" && type === "all") {
+        const groupAndDistric = allData.filter(
+          (data) => data.bloodGroup === group && data.distric === distric
+        );
+        res.send(groupAndDistric);
+        return;
+      }
+
+      //blood group and type
+      if (group !== "all" && distric === "all" && type !== "all") {
+        const groupAndType = allData.filter(
+          (data) => data.bloodGroup === group && data.elegibale === "Yes"
+        );
+        res.send(groupAndType);
+        return;
+      }
+
+      // distric and type
+      if (group === "all" && distric !== "all" && type !== "all") {
+        const groupAndType = allData.filter(
+          (data) => data.distric === distric && data.elegibale === "Yes"
+        );
+        res.send(groupAndType);
+        return;
+      } else {
+        res.send(allData);
+      }
     });
   } finally {
   }
