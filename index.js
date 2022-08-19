@@ -36,10 +36,14 @@ function verifyJwt(req, res, next) {
 async function run() {
   try {
     client.connect();
+    // --------------------all collection----------------
+
     const allDonnerCollection = client
       .db("rokto-bondon")
       .collection("all-donner");
     const bannerCollection = client.db("rokto-bondon").collection("banner");
+    const noticeCollection = client.db("rokto-bondon").collection("notice");
+    const requestCollection = client.db("rokto-bondon").collection("request");
 
     // jwt user token send
     app.put("/user/:email", async (req, res) => {
@@ -289,6 +293,84 @@ async function run() {
       } else {
         res.send(allData);
       }
+    });
+    // add notice
+
+    app.put("/notice", async (req, res) => {
+      const email = "bondon@gmail.com";
+      const body = req.body;
+      const filter = { email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: body,
+      };
+      const result = await noticeCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+    app.get("/notice", async (req, res) => {
+      const result = await noticeCollection.find({}).toArray();
+      res.send(result);
+    });
+
+    // update profile and request aproved data
+    app.put("/approvedRequest/:email", async (req, res) => {
+      const email = req.params.email;
+      const body = req.body;
+      const filter = { email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: body,
+      };
+      const result = await requestCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    app.get("/approvedRequest/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await requestCollection.find(query).toArray();
+      res.send(result);
+    });
+    // for dashboard approved request
+    app.get("/approvedRequestDashboard", async (req, res) => {
+      const query = { request: true };
+      const result = await requestCollection.find(query).toArray();
+      res.send(result);
+    });
+    // delte requst profile
+    app.delete("/requestDelete/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await requestCollection.deleteOne(filter);
+      res.send(result);
+    });
+    // after request delete then post or update in main donner profile
+    app.put("/requestPost/:email", async (req, res) => {
+      const email = req.params.email;
+      const body = req.body;
+      if (!email) {
+        return;
+      }
+      const filter = { email };
+      const options = { upsert: true };
+
+      const updateDoc = {
+        $set: body,
+      };
+      const result = await allDonnerCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
     });
   } finally {
   }
