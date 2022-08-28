@@ -44,6 +44,7 @@ async function run() {
     const bannerCollection = client.db("rokto-bondon").collection("banner");
     const noticeCollection = client.db("rokto-bondon").collection("notice");
     const requestCollection = client.db("rokto-bondon").collection("request");
+    const addPostCollection = client.db("rokto-bondon").collection("addPost");
 
     // jwt user token send
     app.put("/user/:email", async (req, res) => {
@@ -76,6 +77,11 @@ async function run() {
     app.get("/durdantodonner", async (req, res) => {
       const result = await allDonnerCollection.find({}).toArray();
       res.send(result);
+    });
+    app.get("/durdantodonnerhome", async (req, res) => {
+      const result = await allDonnerCollection.find({}).toArray();
+      const countUpTo = result.filter((donner) => donner.donationCount > 5);
+      res.send(countUpTo);
     });
     // donner profile
     app.get("/donnerProfile/:id", async (req, res) => {
@@ -233,7 +239,6 @@ async function run() {
 
     // search result
     app.get("/serachresult/:group", async (req, res) => {
-      console.log(req.query);
       console.log(req.params.group);
       const queryData = req.query;
 
@@ -370,6 +375,52 @@ async function run() {
         updateDoc,
         options
       );
+      res.send(result);
+    });
+
+    // post a image from donner
+    app.put("/addPost/:email", async (req, res) => {
+      const body = req.body;
+      const email = req.params.email;
+      const oldImages = await addPostCollection.findOne({ email });
+      const images = [body.images, ...oldImages.images];
+      const post = { email: body.email, images };
+      const filter = { email };
+      const options = { upsert: true };
+
+      const updateDoc = {
+        $set: post,
+      };
+      const result = await addPostCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+    // get per person post
+    app.get("/posts/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await addPostCollection.findOne(query);
+      res.send(result);
+    });
+    // delete image from donner post
+    app.delete("/delete-donner-post", async (req, res) => {
+      const query = req.query;
+      const id = query.id;
+      const index = query.index;
+      const post = await addPostCollection.findOne({ _id: ObjectId(id) });
+      const images = post.images;
+      images.splice(index, 1);
+
+      const filter = { _id: ObjectId(id) };
+
+      const updateDoc = {
+        $set: { images },
+      };
+
+      const result = await addPostCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
   } finally {
