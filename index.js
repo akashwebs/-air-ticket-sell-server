@@ -8,6 +8,7 @@ require("dotenv").config();
 app.use(cors());
 app.use(express.json());
 const jwt = require("jsonwebtoken");
+const { format } = require("date-fns");
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.eddx8.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -90,6 +91,13 @@ async function run() {
       const result = await allDonnerCollection.findOne(query);
       res.send(result);
     });
+    // donner profile get using email from donner setting
+    app.get("/donner-profile-email/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await allDonnerCollection.findOne(query);
+      res.send(result);
+    });
 
     // all donner for dashboard
     app.get("/allDonner/:serachQuery", async (req, res) => {
@@ -118,27 +126,44 @@ async function run() {
       }
       const filterData = allDonner.filter(
         (data) =>
-          data.phone.toLowerCase().includes(serachQuery) ||
-          data.fullName.includes(serachQuery)
+          data.phone.toLowerCase().includes(serachQuery.toLowerCase()) ||
+          data.fullName.toLowerCase.includes(serachQuery.toLowerCase())
       );
 
       res.send(filterData);
     });
+    // update elegible from donner profile
+    app.put("/donner-profile-update-elegible/:email", async (req, res) => {
+      const email = req.params.email;
+      const body = req.body;
+      if (!email) {
+        return;
+      }
+      const filter = { email };
+
+      const updateDoc = {
+        $set: body,
+      };
+      const result = await allDonnerCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
     // get blood group
     app.get("/bloodgroup/:group", async (req, res) => {
       const group = req.params.group;
-      console.log(group);
       const query = { bloodGroup: group, approved: true };
       const result = await allDonnerCollection.find(query).toArray();
       res.send(result);
     });
+    // get data using email for my profile in client side
+    app.get("/my-profile/:email", async (req, res) => {
+      const email = req.params.email;
 
-    app.get("/totalDonner", async (req, res) => {
-      const result = await allDonnerCollection
-        .find({})
-        .estimatedDocumentCount();
+      const query = { email };
+      const result = await requestCollection.findOne(query);
       res.send(result);
     });
+
     // add banner
     app.post("/addBanner", async (req, res) => {
       const body = req.body;
@@ -220,7 +245,6 @@ async function run() {
     // delete donner profile
     app.delete("/deleteDonnerProfile/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
       if (!id) {
         return;
       }
@@ -239,7 +263,6 @@ async function run() {
 
     // search result
     app.get("/serachresult/:group", async (req, res) => {
-      console.log(req.params.group);
       const queryData = req.query;
 
       const distric = queryData.distric;
@@ -422,6 +445,17 @@ async function run() {
 
       const result = await addPostCollection.updateOne(filter, updateDoc);
       res.send(result);
+    });
+    // Birthday api
+    app.get("/birthday", async (req, res) => {
+      const date = format(new Date(), "PP");
+      const splitDate = date.split(",");
+      const donnerAllData = await allDonnerCollection.find({}).toArray();
+      const donnerBirthday = donnerAllData.filter((donner) =>
+        donner?.birthday?.includes(splitDate[0])
+      );
+
+      res.send(donnerBirthday);
     });
   } finally {
   }
