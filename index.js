@@ -126,8 +126,8 @@ async function run() {
       }
       const filterData = allDonner.filter(
         (data) =>
-          data.phone.toLowerCase().includes(serachQuery.toLowerCase()) ||
-          data.fullName.toLowerCase.includes(serachQuery.toLowerCase())
+          data.phone.includes(serachQuery.toLowerCase()) ||
+          data.fullName.toLowerCase().includes(serachQuery.toLowerCase())
       );
 
       res.send(filterData);
