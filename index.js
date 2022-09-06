@@ -46,6 +46,9 @@ async function run() {
     const noticeCollection = client.db("rokto-bondon").collection("notice");
     const requestCollection = client.db("rokto-bondon").collection("request");
     const addPostCollection = client.db("rokto-bondon").collection("addPost");
+    const addMemberCollection = client
+      .db("rokto-bondon")
+      .collection("family-member");
 
     // jwt user token send
     app.put("/user/:email", async (req, res) => {
@@ -456,6 +459,34 @@ async function run() {
       );
 
       res.send(donnerBirthday);
+    });
+
+    // dashboard overiview count
+    app.get("/allDonner-count", async (req, res) => {
+      const result = await allDonnerCollection.find({}).toArray();
+      res.send({ lenght: result?.length });
+    });
+    app.get("/allRequest-count", async (req, res) => {
+      const result = await requestCollection.find({ request: true }).toArray();
+      res.send({ lenght: result?.length });
+    });
+    // --------------------family member---------------------------------------
+    app.post("/add-family-member", async (req, res) => {
+      const body = req.body;
+      const result = await addMemberCollection.insertOne(body);
+      res.send(result);
+    });
+    // clint side get banner
+    app.get("/all-family-member", async (req, res) => {
+      const query = {};
+      const result = await addMemberCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.delete("/delete-family-member/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await addMemberCollection.deleteOne(filter);
+      res.send(result);
     });
   } finally {
   }
