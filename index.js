@@ -45,7 +45,12 @@ async function run() {
     const bannerCollection = client.db("rokto-bondon").collection("banner");
     const noticeCollection = client.db("rokto-bondon").collection("notice");
     const requestCollection = client.db("rokto-bondon").collection("request");
-    const addPostCollection = client.db("rokto-bondon").collection("addPost");
+    // this is client side donner profile post collection
+    const donnerPostCollection = client
+      .db("rokto-bondon")
+      .collection("addPost");
+    // dashboard blog or any post section our karjokrom
+    const postCollection = client.db("rokto-bondon").collection("posts");
     const addMemberCollection = client
       .db("rokto-bondon")
       .collection("family-member");
@@ -408,7 +413,7 @@ async function run() {
     app.put("/addPost/:email", async (req, res) => {
       const body = req.body;
       const email = req.params.email;
-      const oldImages = await addPostCollection.findOne({ email });
+      const oldImages = await donnerPostCollection.findOne({ email });
       const images = [body.images, ...oldImages.images];
       const post = { email: body.email, images };
       const filter = { email };
@@ -417,7 +422,7 @@ async function run() {
       const updateDoc = {
         $set: post,
       };
-      const result = await addPostCollection.updateOne(
+      const result = await donnerPostCollection.updateOne(
         filter,
         updateDoc,
         options
@@ -428,7 +433,7 @@ async function run() {
     app.get("/posts/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
-      const result = await addPostCollection.findOne(query);
+      const result = await donnerPostCollection.findOne(query);
       res.send(result);
     });
     // delete image from donner post
@@ -436,7 +441,7 @@ async function run() {
       const query = req.query;
       const id = query.id;
       const index = query.index;
-      const post = await addPostCollection.findOne({ _id: ObjectId(id) });
+      const post = await donnerPostCollection.findOne({ _id: ObjectId(id) });
       const images = post.images;
       images.splice(index, 1);
 
@@ -446,7 +451,7 @@ async function run() {
         $set: { images },
       };
 
-      const result = await addPostCollection.updateOne(filter, updateDoc);
+      const result = await donnerPostCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
     // Birthday api
@@ -486,6 +491,48 @@ async function run() {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const result = await addMemberCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+    // --------------------------------------add post collection--------------------
+    app.post("/add-post", async (req, res) => {
+      const body = req.body;
+      const result = await postCollection.insertOne(body);
+      res.send(result);
+    });
+    // clint side get banner
+    app.get("/all-post", async (req, res) => {
+      const query = {};
+      const result = await postCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.get("/single-page-post/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: ObjectId(id) };
+      const result = await postCollection.findOne(query);
+      res.send(result);
+    });
+    app.delete("/delete-post/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await postCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+    app.put("/update-post/:id", async (req, res) => {
+      const id = req.params.id;
+      const body = req.body;
+      if (!id) {
+        return;
+      }
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+
+      const updateDoc = {
+        $set: body,
+      };
+      const result = await postCollection.updateOne(filter, updateDoc, options);
       res.send(result);
     });
   } finally {
