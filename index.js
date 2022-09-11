@@ -237,16 +237,27 @@ async function run() {
         return;
       }
       const filter = { _id: ObjectId(id) };
-      const options = { upsert: true };
 
       const updateDoc = {
         $set: body,
       };
-      const result = await allDonnerCollection.updateOne(
-        filter,
-        updateDoc,
-        options
-      );
+      const result = await allDonnerCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    // hide and unhide phone number
+
+    app.put("/settingPhoneNumber/:email", async (req, res) => {
+      const email = req.params.email;
+      const body = req.body;
+      if (!email) {
+        return;
+      }
+      const filter = { email };
+
+      const updateDoc = {
+        $set: body,
+      };
+      const result = await allDonnerCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
 
@@ -508,7 +519,6 @@ async function run() {
     });
     app.get("/single-page-post/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
       const query = { _id: ObjectId(id) };
       const result = await postCollection.findOne(query);
       res.send(result);
