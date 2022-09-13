@@ -504,6 +504,19 @@ async function run() {
       const result = await addMemberCollection.deleteOne(filter);
       res.send(result);
     });
+    app.put("/family-data-order-set/:id", async (req, res) => {
+      const id = req.params.id;
+      const body = req.body;
+      if (!id) {
+        return;
+      }
+      const filter = { _id: ObjectId(id) };
+      const updateDoc = {
+        $set: body,
+      };
+      const result = await postCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
 
     // --------------------------------------add post collection--------------------
     app.post("/add-post", async (req, res) => {
