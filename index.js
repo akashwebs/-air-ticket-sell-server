@@ -514,7 +514,7 @@ async function run() {
       const updateDoc = {
         $set: body,
       };
-      const result = await postCollection.updateOne(filter, updateDoc);
+      const result = await addMemberCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
 
