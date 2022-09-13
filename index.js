@@ -496,7 +496,10 @@ async function run() {
     app.get("/all-family-member", async (req, res) => {
       const query = {};
       const result = await addMemberCollection.find(query).toArray();
-      res.send(result);
+      const sorting = result.sort((x, y) => {
+        return x.orders - y.orders;
+      });
+      res.send(sorting);
     });
     app.delete("/delete-family-member/:id", async (req, res) => {
       const id = req.params.id;
@@ -506,6 +509,7 @@ async function run() {
     });
     app.put("/family-data-order-set/:id", async (req, res) => {
       const id = req.params.id;
+      console.log(id);
       const body = req.body;
       if (!id) {
         return;
