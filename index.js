@@ -501,6 +501,12 @@ async function run() {
       });
       res.send(sorting);
     });
+    app.get("/family-member-single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await addMemberCollection.findOne(query);
+      res.send(result);
+    });
     app.delete("/delete-family-member/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
