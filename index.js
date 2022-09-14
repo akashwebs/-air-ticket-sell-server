@@ -507,9 +507,9 @@ async function run() {
       const result = await addMemberCollection.deleteOne(filter);
       res.send(result);
     });
-    app.put("/family-data-order-set/:id", async (req, res) => {
+    // here set order and update info in family member
+    app.put("/update-family-member/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
       const body = req.body;
       if (!id) {
         return;
